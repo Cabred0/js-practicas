@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Descuento de Pasajes</title>
+</head>
+<body>
+
+<h1>Cálculo de Descuento para Pasajes</h1>
+
+<form id="formPasaje">
+    <label for="nombre">Nombre:</label>
+    <input id="nombre" type="text" required><br><br>
+
+    <label for="costo">Costo base del pasaje (USD):</label>
+    <input id="costo" type="number" min="0.01" step="0.01" required><br><br>
+
+    <label for="edad">Edad:</label>
+    <input id="edad" type="number" min="0" required><br><br>
+
+    <label for="nacionalidad">Nacionalidad:</label>
+    <input id="nacionalidad" type="text" required><br><br>
+
+    <button type="submit">Calcular</button>
+</form>
+
+<p id="descuento"></p>
+<p id="total"></p>
+
+<script>
+/* ———————————————————————————————————————
+   Autor: ChatGPT – Ejercicio 790
+   Calcula descuento y total a pagar en un pasaje
+   ——————————————————————————————————————— */
+
+document.getElementById('formPasaje').addEventListener('submit', function (evento) {
+    evento.preventDefault(); // Evita recargar la página
+
+    // 1. Lectura y saneamiento de datos
+    const nombre        = document.getElementById('nombre').value.trim();
+    const costoBase     = parseFloat(document.getElementById('costo').value);
+    const edad          = parseInt(document.getElementById('edad').value, 10);
+    const nacionalidad  = document.getElementById('nacionalidad').value.trim().toLowerCase();
+
+    // 2. Validaciones básicas
+    const datosValidos = nombre &&
+                         !isNaN(costoBase) && costoBase > 0 &&
+                         Number.isInteger(edad) && edad >= 0;
+
+    if (!datosValidos) {
+        document.getElementById('descuento').textContent =
+            'Datos inválidos. Verifica e intenta de nuevo.';
+        document.getElementById('total').textContent = '';
+        return;
+    }
+
+    // 3. Determinar si aplica descuento
+    const esEcuatoriano = nacionalidad.startsWith('ecuator'); // acepta “ecuatoriano/a”
+    const edadParaDescuento = (edad <= 12 || edad >= 66);
+
+    let montoDescuento = 0;
+
+    if (esEcuatoriano && edadParaDescuento) {
+        montoDescuento = costoBase * 0.40; // 40 %
+    }
+
+    // 4. Calcular total a pagar
+    const totalPagar = costoBase - montoDescuento;
+
+    // 5. Mostrar resultados (dos decimales)
+    document.getElementById('descuento').textContent =
+        `Descuento aplicado: $${montoDescuento.toFixed(2)}`;
+    document.getElementById('total').textContent    =
+        `Total a pagar:     $${totalPagar.toFixed(2)}`;
+});
+</script>
+
+</body>
+</html>

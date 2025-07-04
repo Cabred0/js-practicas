@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Reloj y Temporizador</title>
+</head>
+<body>
+
+<h1>Reloj Digital y Temporizador</h1>
+
+<!-- Reloj en vivo -->
+<p id="reloj">00:00:00</p>
+
+<hr>
+
+<!-- Temporizador -->
+<h2>Temporizador</h2>
+
+<label for="minutos">Minutos:</label>
+<input id="minutos" type="number" min="0" value="0">
+
+<label for="segundos">Segundos:</label>
+<input id="segundos" type="number" min="0" max="59" value="0"><br><br>
+
+<button id="btnIniciar">Iniciar</button>
+<button id="btnPausar" disabled>Pausar</button>
+<button id="btnReiniciar" disabled>Reiniciar</button>
+
+<p id="displayTemporizador">00:00</p>
+
+<script>
+/* ------------- Reloj en vivo ------------- */
+function actualizarReloj() {
+    const ahora = new Date();
+    const horas   = String(ahora.getHours()).padStart(2, '0');
+    const minutos = String(ahora.getMinutes()).padStart(2, '0');
+    const segundos = String(ahora.getSeconds()).padStart(2, '0');
+    document.getElementById('reloj').textContent = `${horas}:${minutos}:${segundos}`;
+}
+setInterval(actualizarReloj, 1000);
+actualizarReloj(); // primera actualización inmediata
+
+/* ------------- Temporizador ------------- */
+let intervaloTemporizador = null;
+let segundosRestantes = 0;
+
+function formatearSegundos(s) {
+    const m = Math.floor(s / 60);
+    const seg = s % 60;
+    return `${String(m).padStart(2, '0')}:${String(seg).padStart(2, '0')}`;
+}
+
+function iniciarTemporizador() {
+    const minInput = parseInt(document.getElementById('minutos').value, 10);
+    const segInput = parseInt(document.getElementById('segundos').value, 10);
+
+    if (isNaN(minInput) || isNaN(segInput) || minInput < 0 || segInput < 0 || segInput > 59) {
+        alert('Ingresa minutos y segundos válidos (0-59).');
+        return;
+    }
+    segundosRestantes = minInput * 60 + segInput;
+    if (segundosRestantes === 0) return;
+
+    document.getElementById('btnIniciar').disabled = true;
+    document.getElementById('btnPausar').disabled = false;
+    document.getElementById('btnReiniciar').disabled = false;
+
+    mostrarTemporizador(); // mostrar valor inicial
+
+    intervaloTemporizador = setInterval(() => {
+        segundosRestantes--;
+        mostrarTemporizador();
+        if (segundosRestantes <= 0) {
+            clearInterval(intervaloTemporizador);
+            intervaloTemporizador = null;
+            alert('¡Temporizador finalizado!');
+            document.getElementById('btnIniciar').disabled = false;
+            document.getElementById('btnPausar').disabled = true;
+        }
+    }, 1000);
+}
+
+function pausarTemporizador() {
+    if (intervaloTemporizador) {
+        clearInterval(intervaloTemporizador);
+        intervaloTemporizador = null;
+        document.getElementById('btnIniciar').disabled = false;
+        document.getElementById('btnPausar').disabled = true;
+    }
+}
+
+function reiniciarTemporizador() {
+    pausarTemporizador();
+    segundosRestantes = 0;
+    mostrarTemporizador();
+    document.getElementById('btnReiniciar').disabled = true;
+}
+
+function mostrarTemporizador() {
+    document.getElementById('displayTemporizador').textContent = formatearSegundos(segundosRestantes);
+}
+
+/* ------------- Eventos ------------- */
+document.getElementById('btnIniciar').addEventListener('click', iniciarTemporizador);
+document.getElementById('btnPausar').addEventListener('click', pausarTemporizador);
+document.getElementById('btnReiniciar').addEventListener('click', reiniciarTemporizador);
+
+// Mostrar valor inicial 00:00
+mostrarTemporizador();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Filtrado de Llamadas</title>
+</head>
+<body>
+
+<h1>¿Contestar o no la llamada?</h1>
+
+<form id="formLlamada">
+    <label for="telefono">Número de teléfono (9 dígitos):</label>
+    <input id="telefono" type="number" min="100000000" max="999999999" required><br><br>
+
+    <label for="hora">Hora (0-23):</label>
+    <input id="hora" type="number" min="0" max="23" required><br><br>
+
+    <label for="minuto">Minuto (0-59):</label>
+    <input id="minuto" type="number" min="0" max="59" required><br><br>
+
+    <button type="submit">Evaluar</button>
+</form>
+
+<p id="salida"></p>
+
+<script>
+/* ——————————————————————————————
+   Autor: ChatGPT – Ejercicio 789
+   Decide si se contesta o no una llamada
+   —————————————————————————————— */
+
+document.getElementById('formLlamada').addEventListener('submit', function (event) {
+    event.preventDefault(); // Evita recarga de la página
+
+    // 1. Lectura de datos
+    const telefono = parseInt(document.getElementById('telefono').value, 10);
+    const hora      = parseInt(document.getElementById('hora').value, 10);
+    const minuto    = parseInt(document.getElementById('minuto').value, 10);
+
+    // 2. Validaciones
+    const telefonoValido = telefono >= 100000000 && telefono <= 999999999;
+    const horaValida     = hora >= 0 && hora <= 23;
+    const minutoValido   = minuto >= 0 && minuto <= 59;
+
+    if (!telefonoValido || !horaValida || !minutoValido) {
+        document.getElementById('salida').textContent =
+            'Datos inválidos. Verifica e intenta de nuevo.';
+        return;
+    }
+
+    // 3. Conversión de hora:minuto a minutos totales
+    const minutosTot = hora * 60 + minuto;
+
+    // 4. Decisión según las reglas
+    let resultado = 'NO CONTESTAR'; // Valor por defecto
+
+    if (minutosTot <=  8 * 60 + 20) {                 // 00:00 – 08:20
+        resultado = 'CONTESTAR';
+
+    } else if (minutosTot <= 12 * 60 + 59) {          // 08:21 – 12:59
+        resultado = (telefono % 1000 === 909) ? 'CONTESTAR' : 'NO CONTESTAR';
+
+    } else if (minutosTot <= 19 * 60 + 50) {          // 13:00 – 19:50
+        const empieza877 = telefono.toString().startsWith('877');
+        resultado = empieza877 ? 'NO CONTESTAR' : 'CONTESTAR';
+
+    } // 19:51 – 23:59 se mantiene NO CONTESTAR
+
+    // 5. Salida
+    document.getElementById('salida').textContent = resultado;
+});
+</script>
+
+</body>
+</html>

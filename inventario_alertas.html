@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Inventario con Alertas</title>
+</head>
+<body>
+
+<h1>Gestión de Inventario</h1>
+
+<form id="formProducto">
+    <label for="nombre">Producto:</label>
+    <input id="nombre" type="text" required><br><br>
+
+    <label for="cantidad">Cantidad en stock:</label>
+    <input id="cantidad" type="number" min="0" required><br><br>
+
+    <label for="minimo">Stock mínimo:</label>
+    <input id="minimo" type="number" min="0" required><br><br>
+
+    <button type="submit">Guardar</button>
+    <button type="button" id="btnCancelar" style="display:none;">Cancelar</button>
+</form>
+
+<br>
+
+<label for="buscador">Buscar producto:</label>
+<input id="buscador" type="text" placeholder="Nombre del producto"><br><br>
+
+<table border="1">
+    <thead>
+        <tr>
+            <th>Producto</th>
+            <th>Cantidad</th>
+            <th>Mínimo</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody id="cuerpoTabla"></tbody>
+</table>
+
+<script>
+/* ---------- Constantes y estado ---------- */
+const CLAVE_LS = 'inventarioProductos';
+let productos = [];
+let editId = null;
+
+/* ---------- Utilidades ---------- */
+function cargarProductos() {
+    const datos = localStorage.getItem(CLAVE_LS);
+    productos = datos ? JSON.parse(datos) : [];
+}
+function guardarProductos() {
+    localStorage.setItem(CLAVE_LS, JSON.stringify(productos));
+}
+function alertaStock(prod) {
+    if (prod.cantidad < prod.minimo) {
+        alert(`¡Alerta! El producto "${prod.nombre}" está por debajo del stock mínimo.`);
+    }
+}
+
+/* ---------- Renderizado ---------- */
+function renderizarTabla(lista = productos) {
+    const cuerpo = document.getElementById('cuerpoTabla');
+    cuerpo.innerHTML = '';
+    lista.forEach(p => {
+        const fila = document.createElement('tr');
+        fila.innerHTML = `
+            <td>${p.nombre}</td>
+            <td>${p.cantidad}</td>
+            <td>${p.minimo}</td>
+            <td>
+                <button onclick="editarProducto('${p.id}')">Editar</button>
+                <button onclick="eliminarProducto('${p.id}')">Eliminar</button>
+            </td>
+        `;
+        cuerpo.appendChild(fila);
+    });
+}
+
+/* ---------- CRUD ---------- */
+function guardarProducto(e) {
+    e.preventDefault();
+
+    const nombre = document.getElementById('nombre').value.trim();
+    const cantidad = parseInt(document.getElementById('cantidad').value, 10);
+    const minimo = parseInt(document.getElementById('minimo').value, 10);
+
+    if (!nombre || isNaN(cantidad) || cantidad < 0 || isNaN(minimo) || minimo < 0) return;
+
+    if (editId) {
+        const idx = productos.findIndex(p => p.id === editId);
+        if (idx !== -1) {
+            productos[idx] = { id: editId, nombre, cantidad, minimo };
+            alertaStock(productos[idx]);
+        }
+        editId = null;
+        document.getElementById('btnCancelar').style.display = 'none';
+    } else {
+        const nuevo = { id: Date.now().toString(), nombre, cantidad, minimo };
+        productos.push(nuevo);
+        alertaStock(nuevo);
+    }
+
+    guardarProductos();
+    renderizarTabla();
+    e.target.reset();
+}
+
+function editarProducto(id) {
+    const prod = productos.find(p => p.id === id);
+    if (!prod) return;
+
+    document.getElementById('nombre').value = prod.nombre;
+    document.getElementById('cantidad').value = prod.cantidad;
+    document.getElementById('minimo').value = prod.minimo;
+
+    editId = id;
+    document.getElementById('btnCancelar').style.display = 'inline';
+}
+
+function eliminarProducto(id) {
+    productos = productos.filter(p => p.id !== id);
+    guardarProductos();
+    renderizarTabla();
+}
+
+function cancelarEdicion() {
+    editId = null;
+    document.getElementById('formProducto').reset();
+    document.getElementById('btnCancelar').style.display = 'none';
+}
+
+/* ---------- Filtro ---------- */
+function filtrarProductos() {
+    const termino = document.getElementById('buscador').value.toLowerCase();
+    const filtrados = productos.filter(p => p.nombre.toLowerCase().includes(termino));
+    renderizarTabla(filtrados);
+}
+
+/* ---------- Eventos ---------- */
+document.getElementById('formProducto').addEventListener('submit', guardarProducto);
+document.getElementById('btnCancelar').addEventListener('click', cancelarEdicion);
+document.getElementById('buscador').addEventListener('keyup', filtrarProductos);
+
+/* ---------- Inicio ---------- */
+cargarProductos();
+renderizarTabla();
+</script>
+
+</body>
+</html>

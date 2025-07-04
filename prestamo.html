@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Evaluación de Préstamo</title>
+</head>
+<body>
+
+<h1>Evaluación de Préstamo Bancario</h1>
+
+<form id="formPrestamo">
+    <label for="nombre">Nombre:</label>
+    <input id="nombre" type="text" required><br><br>
+
+    <label for="historial">Historial crediticio:</label>
+    <select id="historial" required>
+        <option value="b">Bueno (b)</option>
+        <option value="m">Malo&nbsp;(m)</option>
+    </select><br><br>
+
+    <label for="monto">Monto del préstamo (S/):</label>
+    <input id="monto" type="number" min="1" step="0.01" required><br><br>
+
+    <label for="salario">Salario anual (S/):</label>
+    <input id="salario" type="number" min="1" step="0.01" required><br><br>
+
+    <label for="propiedades">Valor de otras propiedades (S/):</label>
+    <input id="propiedades" type="number" min="0" step="0.01" required><br><br>
+
+    <button type="submit">Evaluar</button>
+</form>
+
+<p id="salida"></p>
+
+<script>
+/*  ————————————————————————————————
+    Autor: ChatGPT – Ejercicio 448
+    Descripción: decide si se aprueba un préstamo
+    ———————————————————————————————— */
+
+document.getElementById('formPrestamo').addEventListener('submit', function (event) {
+    event.preventDefault(); // Evita recargar la página
+
+    // 1. Lectura y limpieza de datos
+    const nombre = document.getElementById('nombre').value.trim();
+    const historial = document.getElementById('historial').value;
+    const monto = parseFloat(document.getElementById('monto').value);
+    const salario = parseFloat(document.getElementById('salario').value);
+    const propiedades = parseFloat(document.getElementById('propiedades').value);
+
+    // 2. Validaciones básicas
+    if (!nombre || monto <= 0 || salario <= 0 || propiedades < 0) {
+        document.getElementById('salida').textContent = 'Datos inválidos. Verifica e intenta de nuevo.';
+        return;
+    }
+
+    // 3. Cálculo de puntos por salario
+    let puntosSalario = 0;
+    const ratioSalario = salario / monto;
+
+    if (ratioSalario >= 0.5) {
+        puntosSalario = 5;
+    } else if (ratioSalario >= 0.25) { // 0.25 ≤ ratio < 0.5
+        puntosSalario = 3;
+    } else if (ratioSalario >= 0.10) { // 0.10 ≤ ratio < 0.25
+        puntosSalario = 1;
+    }
+
+    // 4. Cálculo de puntos por propiedades
+    let puntosProp = 0;
+    const ratioProp = propiedades / monto;
+
+    if (ratioProp >= 2) {
+        puntosProp = 5;
+    } else if (ratioProp >= 1) { // 1 ≤ ratio < 2
+        puntosProp = 3;
+    }
+    // Si ratio < 1 no se suman puntos (queda en 0)
+
+    // 5. Suma total y decisión
+    const puntosTotales = puntosSalario + puntosProp;
+    const aprobado = (historial === 'b') && (puntosTotales > 6);
+
+    document.getElementById('salida').textContent =
+        `${nombre}, resultado: ${aprobado ? 'APROBADO' : 'RECHAZADO'} ` +
+        `(puntos: ${puntosTotales})`;
+});
+</script>
+
+</body>
+</html>

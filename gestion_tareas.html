@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestión de Tareas Pendientes</title>
+</head>
+<body>
+
+<h1>Lista de Tareas</h1>
+
+<form id="formTarea">
+    <label for="titulo">Título:</label>
+    <input id="titulo" type="text" required><br><br>
+
+    <label for="descripcion">Descripción:</label>
+    <input id="descripcion" type="text"><br><br>
+
+    <button type="submit">Agregar tarea</button>
+</form>
+
+<br>
+
+<label for="buscador">Buscar:</label>
+<input id="buscador" type="text" placeholder="Filtrar tareas"><br><br>
+
+<ul id="listaTareas"></ul>
+
+<script>
+/* ---------- Constantes ---------- */
+const CLAVE_LS = 'tareasPendientes';
+let tareas = [];
+
+/* ---------- Utilidades ---------- */
+function cargarTareas() {
+    const datos = localStorage.getItem(CLAVE_LS);
+    tareas = datos ? JSON.parse(datos) : [];
+}
+
+function guardarTareas() {
+    localStorage.setItem(CLAVE_LS, JSON.stringify(tareas));
+}
+
+/* ---------- Renderizado ---------- */
+function renderizarLista(fuente = tareas) {
+    const ul = document.getElementById('listaTareas');
+    ul.innerHTML = '';
+
+    fuente.forEach(t => {
+        const li = document.createElement('li');
+
+        const texto = t.completada
+            ? `<del><strong>${t.titulo}</strong></del> — <del>${t.descripcion}</del>`
+            : `<strong>${t.titulo}</strong> — ${t.descripcion}`;
+
+        li.innerHTML = `
+            ${texto}
+            <button onclick="alternarEstado('${t.id}')">
+                ${t.completada ? 'Desmarcar' : 'Completar'}
+            </button>
+            <button onclick="eliminarTarea('${t.id}')">Eliminar</button>
+        `;
+
+        ul.appendChild(li);
+    });
+}
+
+/* ---------- CRUD ---------- */
+function agregarTarea(e) {
+    e.preventDefault();
+
+    const titulo = document.getElementById('titulo').value.trim();
+    const descripcion = document.getElementById('descripcion').value.trim();
+
+    if (!titulo) return;
+
+    tareas.push({
+        id: Date.now().toString(),
+        titulo,
+        descripcion,
+        completada: false
+    });
+
+    guardarTareas();
+    renderizarLista();
+    e.target.reset();
+}
+
+function alternarEstado(id) {
+    const tarea = tareas.find(t => t.id === id);
+    if (tarea) {
+        tarea.completada = !tarea.completada;
+        guardarTareas();
+        renderizarLista();
+    }
+}
+
+function eliminarTarea(id) {
+    tareas = tareas.filter(t => t.id !== id);
+    guardarTareas();
+    renderizarLista();
+}
+
+/* ---------- Filtrado ---------- */
+function filtrarTareas() {
+    const termino = document.getElementById('buscador').value.toLowerCase();
+    const filtradas = tareas.filter(t =>
+        t.titulo.toLowerCase().includes(termino) ||
+        t.descripcion.toLowerCase().includes(termino)
+    );
+    renderizarLista(filtradas);
+}
+
+/* ---------- Eventos ---------- */
+document.getElementById('formTarea').addEventListener('submit', agregarTarea);
+document.getElementById('buscador').addEventListener('keyup', filtrarTareas);
+
+/* ---------- Inicio ---------- */
+cargarTareas();
+renderizarLista();
+</script>
+
+</body>
+</html>

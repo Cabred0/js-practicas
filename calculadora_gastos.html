@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Calculadora de Gastos Compartidos</title>
+</head>
+<body>
+
+<h1>Gastos Compartidos</h1>
+
+<form id="formGasto">
+    <label for="nombreGasto">Nombre del gasto:</label>
+    <input id="nombreGasto" type="text" required><br><br>
+
+    <label for="montoGasto">Monto (S/):</label>
+    <input id="montoGasto" type="number" min="0.01" step="0.01" required><br><br>
+
+    <label for="responsableGasto">Persona responsable:</label>
+    <input id="responsableGasto" type="text" required><br><br>
+
+    <button type="submit">Agregar</button>
+</form>
+
+<br>
+
+<table border="1" id="tablaGastos">
+    <thead>
+        <tr>
+            <th>Gasto</th>
+            <th>Monto (S/)</th>
+            <th>Responsable</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody id="cuerpoTabla"></tbody>
+</table>
+
+<br>
+<p id="totalGastos">Total acumulado: S/ 0.00</p>
+<button id="btnReiniciar">Restablecer todo</button>
+
+<script>
+const LS_KEY = 'listaGastosCompartidos';
+let gastos = [];
+
+/* -------------------- Utilidades -------------------- */
+function cargarGastos() {
+    const datos = localStorage.getItem(LS_KEY);
+    gastos = datos ? JSON.parse(datos) : [];
+}
+
+function guardarGastos() {
+    localStorage.setItem(LS_KEY, JSON.stringify(gastos));
+}
+
+function formatear(num) {
+    return num.toFixed(2);
+}
+
+/* -------------------- Renderizado -------------------- */
+function renderizarTabla() {
+    const cuerpo = document.getElementById('cuerpoTabla');
+    cuerpo.innerHTML = '';
+    gastos.forEach(g => {
+        const fila = document.createElement('tr');
+        fila.innerHTML = `
+            <td>${g.nombre}</td>
+            <td>${formatear(g.monto)}</td>
+            <td>${g.responsable}</td>
+            <td><button onclick="eliminarGasto('${g.id}')">Eliminar</button></td>
+        `;
+        cuerpo.appendChild(fila);
+    });
+
+    const total = gastos.reduce((t, g) => t + g.monto, 0);
+    document.getElementById('totalGastos').textContent =
+        `Total acumulado: S/ ${formatear(total)}`;
+}
+
+/* -------------------- CRUD -------------------- */
+function agregarGasto(e) {
+    e.preventDefault();
+    const nombre = document.getElementById('nombreGasto').value.trim();
+    const monto = parseFloat(document.getElementById('montoGasto').value);
+    const responsable = document.getElementById('responsableGasto').value.trim();
+
+    if (!nombre || isNaN(monto) || monto <= 0) return;
+
+    gastos.push({ id: Date.now().toString(), nombre, monto, responsable });
+    guardarGastos();
+    renderizarTabla();
+    e.target.reset();
+}
+
+function eliminarGasto(id) {
+    gastos = gastos.filter(g => g.id !== id);
+    guardarGastos();
+    renderizarTabla();
+}
+
+/* -------------------- Reiniciar -------------------- */
+function reiniciarTodo() {
+    if (!confirm('¿Seguro que deseas borrar todos los datos?')) return;
+    gastos = [];
+    guardarGastos();
+    renderizarTabla();
+}
+
+/* -------------------- Eventos -------------------- */
+document.getElementById('formGasto').addEventListener('submit', agregarGasto);
+document.getElementById('btnReiniciar').addEventListener('click', reiniciarTodo);
+
+/* -------------------- Inicio -------------------- */
+cargarGastos();
+renderizarTabla();
+</script>
+
+</body>
+</html>

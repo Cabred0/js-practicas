@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Factura de Compras</title>
+</head>
+<body>
+
+<h1>Registro de Facturas</h1>
+
+<form id="formFactura">
+    <label for="articulo">Artículo:</label>
+    <input id="articulo" type="text" required><br><br>
+
+    <label for="cantidad">Cantidad:</label>
+    <input id="cantidad" type="number" min="1" required><br><br>
+
+    <label for="precio">Precio unitario (S/):</label>
+    <input id="precio" type="number" min="0.01" step="0.01" required><br><br>
+
+    <label for="descuento">Descuento (%):</label>
+    <input id="descuento" type="number" min="0" step="0.01" value="0" required><br><br>
+
+    <label for="impuesto">Impuesto (%):</label>
+    <input id="impuesto" type="number" min="0" step="0.01" value="0" required><br><br>
+
+    <button type="submit">Agregar factura</button>
+</form>
+
+<br>
+
+<table border="1" id="tablaFacturas">
+    <thead>
+        <tr>
+            <th>Artículo</th>
+            <th>Cant.</th>
+            <th>Precio (S/)</th>
+            <th>Subtotal</th>
+            <th>Descuento</th>
+            <th>Impuesto</th>
+            <th>Total</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody id="cuerpoTabla"></tbody>
+</table>
+
+<script>
+/* ---------- Constantes ---------- */
+const LS_CLAVE = 'historialFacturas';
+let facturas = [];
+
+/* ---------- Utilidades ---------- */
+function cargarFacturas() {
+    const datos = localStorage.getItem(LS_CLAVE);
+    facturas = datos ? JSON.parse(datos) : [];
+}
+
+function guardarFacturas() {
+    localStorage.setItem(LS_CLAVE, JSON.stringify(facturas));
+}
+
+function formato(num) {
+    return num.toFixed(2);
+}
+
+/* ---------- Cálculos ---------- */
+function calcularFactura(cantidad, precio, desc, imp) {
+    const subtotal = cantidad * precio;
+    const montoDescuento = subtotal * desc / 100;
+    const base = subtotal - montoDescuento;
+    const montoImpuesto = base * imp / 100;
+    const total = base + montoImpuesto;
+    return { subtotal, montoDescuento, montoImpuesto, total };
+}
+
+/* ---------- Renderizado ---------- */
+function renderizarTabla() {
+    const tbody = document.getElementById('cuerpoTabla');
+    tbody.innerHTML = '';
+
+    facturas.forEach(f => {
+        const fila = document.createElement('tr');
+        fila.innerHTML = `
+            <td>${f.articulo}</td>
+            <td>${f.cantidad}</td>
+            <td>${formato(f.precio)}</td>
+            <td>${formato(f.subtotal)}</td>
+            <td>${formato(f.montoDescuento)}</td>
+            <td>${formato(f.montoImpuesto)}</td>
+            <td>${formato(f.total)}</td>
+            <td><button onclick="eliminarFactura('${f.id}')">Eliminar</button></td>
+        `;
+        tbody.appendChild(fila);
+    });
+}
+
+/* ---------- CRUD ---------- */
+function agregarFactura(e) {
+    e.preventDefault();
+
+    const articulo = document.getElementById('articulo').value.trim();
+    const cantidad = parseInt(document.getElementById('cantidad').value, 10);
+    const precio = parseFloat(document.getElementById('precio').value);
+    const descuento = parseFloat(document.getElementById('descuento').value);
+    const impuesto = parseFloat(document.getElementById('impuesto').value);
+
+    if (!articulo || isNaN(cantidad) || cantidad <= 0 || isNaN(precio) || precio <= 0 ||
+        descuento < 0 || impuesto < 0) {
+        alert('Verifica los datos ingresados.');
+        return;
+    }
+
+    const calc = calcularFactura(cantidad, precio, descuento, impuesto);
+
+    facturas.push({
+        id: Date.now().toString(),
+        articulo,
+        cantidad,
+        precio,
+        descuento,
+        impuesto,
+        ...calc
+    });
+
+    guardarFacturas();
+    renderizarTabla();
+    e.target.reset();
+}
+
+function eliminarFactura(id) {
+    facturas = facturas.filter(f => f.id !== id);
+    guardarFacturas();
+    renderizarTabla();
+}
+
+/* ---------- Eventos ---------- */
+document.getElementById('formFactura').addEventListener('submit', agregarFactura);
+
+/* ---------- Inicio ---------- */
+cargarFacturas();
+renderizarTabla();
+</script>
+
+</body>
+</html>

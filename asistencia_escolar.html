@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Registro de Asistencia Escolar</title>
+</head>
+<body>
+
+<h1>Registro de Asistencia</h1>
+
+<form id="formAsistencia">
+    <label for="nombre">Nombre del estudiante:</label>
+    <input id="nombre" type="text" required><br><br>
+
+    <label for="fecha">Fecha:</label>
+    <input id="fecha" type="date" required><br><br>
+
+    <label for="estado">Estado:</label>
+    <select id="estado" required>
+        <option value="Asistió">Asistió</option>
+        <option value="Faltó">Faltó</option>
+    </select><br><br>
+
+    <button type="submit">Guardar</button>
+</form>
+
+<br>
+
+<label for="buscador">Buscar por nombre:</label>
+<input id="buscador" type="text" placeholder="Nombre del estudiante"><br><br>
+
+<table border="1" id="tablaAsistencias">
+    <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>Fecha</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody id="cuerpoTabla"></tbody>
+</table>
+
+<script>
+const LS_KEY = 'asistenciasEscolares';
+let asistencias = [];
+
+function cargarAsistencias() {
+    const data = localStorage.getItem(LS_KEY);
+    asistencias = data ? JSON.parse(data) : [];
+}
+
+function guardarAsistencias() {
+    localStorage.setItem(LS_KEY, JSON.stringify(asistencias));
+}
+
+function renderizarTabla(lista = asistencias) {
+    const cuerpo = document.getElementById('cuerpoTabla');
+    cuerpo.innerHTML = '';
+    lista.forEach(reg => {
+        const fila = document.createElement('tr');
+        fila.innerHTML = `
+            <td>${reg.nombre}</td>
+            <td>${reg.fecha}</td>
+            <td>${reg.estado}</td>
+            <td><button onclick="eliminarRegistro('${reg.id}')">Eliminar</button></td>
+        `;
+        cuerpo.appendChild(fila);
+    });
+}
+
+function guardarRegistro(e) {
+    e.preventDefault();
+    const nombre = document.getElementById('nombre').value.trim();
+    const fecha = document.getElementById('fecha').value;
+    const estado = document.getElementById('estado').value;
+    if (!nombre || !fecha) return;
+    asistencias.push({ id: Date.now().toString(), nombre, fecha, estado });
+    guardarAsistencias();
+    renderizarTabla();
+    e.target.reset();
+}
+
+function eliminarRegistro(id) {
+    asistencias = asistencias.filter(r => r.id !== id);
+    guardarAsistencias();
+    renderizarTabla();
+}
+
+function filtrar() {
+    const termino = document.getElementById('buscador').value.trim().toLowerCase();
+    const filtradas = asistencias.filter(r => r.nombre.toLowerCase().includes(termino));
+    renderizarTabla(filtradas);
+}
+
+document.getElementById('formAsistencia').addEventListener('submit', guardarRegistro);
+document.getElementById('buscador').addEventListener('keyup', filtrar);
+
+cargarAsistencias();
+renderizarTabla();
+</script>
+
+</body>
+</html>

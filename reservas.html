@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestión de Reservas de Vehículos</title>
+</head>
+<body>
+
+<h1>Reservas de Vehículos</h1>
+
+<form id="formReserva">
+    <label for="cliente">Cliente:</label>
+    <input id="cliente" type="text" required><br><br>
+
+    <label for="tipoVehiculo">Tipo de vehículo:</label>
+    <select id="tipoVehiculo" required>
+        <option value="auto">Auto</option>
+        <option value="camioneta">Camioneta</option>
+        <option value="jeep">Jeep</option>
+    </select><br><br>
+
+    <label for="fecha">Fecha:</label>
+    <input id="fecha" type="date" required><br><br>
+
+    <label for="horaInicio">Hora de inicio:</label>
+    <input id="horaInicio" type="time" required><br><br>
+
+    <label for="horasUso">Horas de uso:</label>
+    <input id="horasUso" type="number" min="1" required><br><br>
+
+    <label for="kmInicial">Kilometraje inicial:</label>
+    <input id="kmInicial" type="number" min="0" required><br><br>
+
+    <label for="kmEstimado">Kilometraje estimado final:</label>
+    <input id="kmEstimado" type="number" min="0" required><br><br>
+
+    <button type="submit">Guardar</button>
+    <button type="button" id="cancelarEdicion" style="display:none;">Cancelar</button>
+</form>
+
+<br>
+
+<label for="buscador">Buscar por cliente:</label>
+<input id="buscador" type="text" placeholder="Nombre del cliente"><br><br>
+
+<table border="1" id="tablaReservas">
+    <thead>
+        <tr>
+            <th>Cliente</th>
+            <th>Vehículo</th>
+            <th>Fecha</th>
+            <th>Hora</th>
+            <th>Duración (h)</th>
+            <th>Km inicial</th>
+            <th>Km estimado</th>
+            <th>Importe (S/)</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody id="cuerpoTabla"></tbody>
+</table>
+
+<br>
+<p id="ingresoTotal">Ingreso total: S/ 0.00</p>
+
+<script>
+/* -------------------- Constantes -------------------- */
+const TARIFAS = { auto: 40, camioneta: 65, jeep: 80 };
+const LS_KEY = 'reservasVehiculos';
+
+/* -------------------- Estado -------------------- */
+let reservas = [];
+let editId = null;
+
+/* -------------------- Utilidades -------------------- */
+function cargarReservas() {
+    const data = localStorage.getItem(LS_KEY);
+    reservas = data ? JSON.parse(data) : [];
+}
+
+function guardarReservas() {
+    localStorage.setItem(LS_KEY, JSON.stringify(reservas));
+}
+
+function calcularImporte(tipo, horas) {
+    return TARIFAS[tipo] * horas;
+}
+
+function formatearMoneda(num) {
+    return num.toFixed(2);
+}
+
+/* -------------------- Renderizado -------------------- */
+function renderizarTabla(lista = reservas) {
+    const cuerpo = document.getElementById('cuerpoTabla');
+    cuerpo.innerHTML = '';
+
+    lista.forEach(res => {
+        const fila = document.createElement('tr');
+
+        fila.innerHTML = `
+            <td>${res.cliente}</td>
+            <td>${res.tipo}</td>
+            <td>${res.fecha}</td>
+            <td>${res.hora}</td>
+            <td>${res.horas}</td>
+            <td>${res.kmInicial}</td>
+            <td>${res.kmEstimado}</td>
+            <td>${formatearMoneda(res.importe)}</td>
+            <td>
+                <button onclick="editarReserva('${res.id}')">Editar</button>
+                <button onclick="eliminarReserva('${res.id}')">Eliminar</button>
+            </td>
+        `;
+        cuerpo.appendChild(fila);
+    });
+
+    const total = reservas.reduce((t, r) => t + r.importe, 0);
+    document.getElementById('ingresoTotal').textContent =
+        `Ingreso total: S/ ${formatearMoneda(total)}`;
+}
+
+/* -------------------- CRUD -------------------- */
+function guardarReserva(e) {
+    e.preventDefault();
+
+    const cliente = document.getElementById('cliente').value.trim();
+    const tipo = document.getElementById('tipoVehiculo').value;
+    const fecha = document.getElementById('fecha').value;
+    const hora = document.getElementById('horaInicio').value;
+    const horas = parseFloat(document.getElementById('horasUso').value);
+    const kmInicial = parseFloat(document.getElementById('kmInicial').value);
+    const kmEstimado = parseFloat(document.getElementById('kmEstimado').value);
+
+    if (!cliente) return;
+
+    const importe = calcularImporte(tipo, horas);
+
+    if (editId) {
+        // Actualizar
+        const idx = reservas.findIndex(r => r.id === editId);
+        if (idx !== -1) {
+            reservas[idx] = { id: editId, cliente, tipo, fecha, hora, horas, kmInicial, kmEstimado, importe };
+        }
+        editId = null;
+        document.getElementById('cancelarEdicion').style.display = 'none';
+    } else {
+        // Nuevo
+        reservas.push({ id: Date.now().toString(), cliente, tipo, fecha, hora, horas, kmInicial, kmEstimado, importe });
+    }
+
+    guardarReservas();
+    renderizarTabla();
+    e.target.reset();
+}
+
+function editarReserva(id) {
+    const res = reservas.find(r => r.id === id);
+    if (!res) return;
+
+    document.getElementById('cliente').value = res.cliente;
+    document.getElementById('tipoVehiculo').value = res.tipo;
+    document.getElementById('fecha').value = res.fecha;
+    document.getElementById('horaInicio').value = res.hora;
+    document.getElementById('horasUso').value = res.horas;
+    document.getElementById('kmInicial').value = res.kmInicial;
+    document.getElementById('kmEstimado').value = res.kmEstimado;
+
+    editId = id;
+    document.getElementById('cancelarEdicion').style.display = 'inline';
+}
+
+function eliminarReserva(id) {
+    reservas = reservas.filter(r => r.id !== id);
+    guardarReservas();
+    renderizarTabla();
+}
+
+/* -------------------- Filtro -------------------- */
+function filtrarReservas() {
+    const termino = document.getElementById('buscador').value.trim().toLowerCase();
+    const filtradas = reservas.filter(r => r.cliente.toLowerCase().includes(termino));
+    renderizarTabla(filtradas);
+}
+
+/* -------------------- Eventos -------------------- */
+document.getElementById('formReserva').addEventListener('submit', guardarReserva);
+document.getElementById('buscador').addEventListener('keyup', filtrarReservas);
+document.getElementById('cancelarEdicion').addEventListener('click', () => {
+    editId = null;
+    document.getElementById('formReserva').reset();
+    document.getElementById('cancelarEdicion').style.display = 'none';
+});
+
+/* -------------------- Inicio -------------------- */
+cargarReservas();
+renderizarTabla();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>791. Cálculo de IMC</title>
+</head>
+<body>
+
+<h1>Calculadora de Índice de Masa Corporal (IMC)</h1>
+
+<form id="formIMC">
+    <label for="nombre">Nombre:</label>
+    <input id="nombre" type="text" required><br><br>
+
+    <label for="masa">Masa (kg):</label>
+    <input id="masa" type="number" min="0.1" step="0.01" required><br><br>
+
+    <label for="estatura">Estatura (m):</label>
+    <input id="estatura" type="number" min="0.1" step="0.01" required><br><br>
+
+    <button type="submit">Calcular IMC</button>
+</form>
+
+<p id="resultadoIMC"></p>
+<p id="observacion"></p>
+
+<script>
+/* ———————————————————————————————————————————
+   Autor: ChatGPT – Ejercicio 791
+   Calcula IMC y determina nivel de peso
+   ——————————————————————————————————————————— */
+
+document.getElementById('formIMC').addEventListener('submit', function (evento) {
+    evento.preventDefault(); // Evita recarga
+
+    // 1. Lectura y limpieza de datos
+    const nombre    = document.getElementById('nombre').value.trim();
+    const masa      = parseFloat(document.getElementById('masa').value);
+    const estatura  = parseFloat(document.getElementById('estatura').value);
+
+    // 2. Validaciones básicas
+    const datosValidos = nombre &&
+                         !isNaN(masa) && masa > 0 &&
+                         !isNaN(estatura) && estatura > 0;
+
+    if (!datosValidos) {
+        document.getElementById('resultadoIMC').textContent =
+            'Datos inválidos. Verifica e intenta de nuevo.';
+        document.getElementById('observacion').textContent = '';
+        return;
+    }
+
+    // 3. Cálculo del IMC
+    const imc = masa / (estatura * estatura);
+
+    // 4. Clasificación
+    let categoria;
+    if (imc < 18.5) {
+        categoria = 'Bajo peso';
+    } else if (imc < 25) {            // 18.5 ≤ IMC < 25
+        categoria = 'Normal';
+    } else if (imc < 30) {            // 25 ≤ IMC < 30
+        categoria = 'Sobrepeso';
+    } else {                          // IMC ≥ 30
+        categoria = 'Obesidad';
+    }
+
+    // 5. Mostrar resultados
+    document.getElementById('resultadoIMC').textContent =
+        `${nombre} tiene un IMC de ${imc.toFixed(2)} kg/m²`;
+    document.getElementById('observacion').textContent =
+        `Observación sobre peso: ${categoria}`;
+});
+</script>
+
+</body>
+</html>
